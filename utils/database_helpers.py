@@ -4,6 +4,9 @@ import pandas as pd
 import json
 from configs.constants import DATABASE_PATH
 from datetime import datetime, timedelta
+from utils.openai_helpers import (
+    assign_tags,
+)  # Assuming this is the assign_tags function we defined earlier
 
 
 def get_connection():
@@ -121,3 +124,134 @@ def load_data(timeframe):
     conn.close()
 
     return df
+
+
+def load_tagged_data(timeframe, predefined_tags) -> pd.DataFrame:
+    """
+    Load tagged conversations from the `conversation_tags` table based on the selected timeframe.
+    """
+    conn = get_connection()
+
+    # Create the SQL query by including the dynamically retrieved tags
+    tags_columns = ", ".join(predefined_tags)
+    query = f"""
+    SELECT t.session_id, c.timestamp, {tags_columns}
+    FROM conversation_tags t
+    JOIN conversations c ON t.session_id = c.session_id
+    """
+
+    # Apply timeframe filtering
+    if timeframe == "1 month":
+        query += " WHERE c.timestamp >= date('now', '-1 month')"
+    elif timeframe == "1 week":
+        query += " WHERE c.timestamp >= date('now', '-7 days')"
+
+    df = pd.read_sql_query(query, conn)
+    conn.close()
+
+    return df
+
+
+def process_all_unprocessed_conversations(predefined_tags):
+    """
+    Process all untagged conversations by running them through assign_tags
+    and storing the tags in the `conversation_tags` table.
+    """
+    conn = get_connection()
+    c = conn.cursor()
+
+    # Fetch all unprocessed conversations
+    query = """
+    SELECT c.session_id, c.conversation_data
+    FROM conversations c
+    LEFT JOIN conversation_tags t
+    ON c.session_id = t.session_id
+    WHERE t.session_id IS NULL;
+    """
+    c.execute(query)
+    unprocessed_conversations = c.fetchall()
+
+    if unprocessed_conversations:
+        for session_id, conversation_data in unprocessed_conversations:
+            # Run assign_tags to get active and suggested tags
+            active_tags, suggested_tags = assign_tags(
+                conversation_data, predefined_tags
+            )
+
+            # Save the active tags into the database
+            update_conversation_tags(session_id, active_tags, predefined_tags)
+
+            logger.info(f"Processed conversation {session_id} and tagged it.")
+            logger.info(f"Active Tags: {active_tags}")
+            logger.info(f"Suggested Tags: {suggested_tags}")
+    else:
+        logger.info("No unprocessed conversations found.")
+
+    conn.close()
+
+
+def update_conversation_tags(session_id, active_tags, predefined_tags):
+    """
+    Save the active tags for a given conversation in the `conversation_tags` table in `chatbot.db`.
+    """
+    conn = get_connection()
+    c = conn.cursor()
+
+    # Set values for each tag (1 if present in tags, otherwise 0)
+    tag_values = {tag: 1 if tag in active_tags else 0 for tag in predefined_tags}
+
+    # Create a dynamic SQL query for inserting or replacing the tag values
+    columns = ", ".join(predefined_tags)
+    placeholders = ", ".join(["?"] * len(predefined_tags))
+    query = f"""
+    INSERT OR REPLACE INTO conversation_tags (session_id, {columns})
+    VALUES (?, {placeholders})
+    """
+
+    # Define the values to be inserted into the query, corresponding to each tag column
+    values = (session_id, *tag_values.values())
+
+    # Execute the query to update the conversation_tags table
+    c.execute(query, values)
+
+    # Commit the transaction and close the connection
+    conn.commit()
+    conn.close()
+
+
+def add_new_tag_column(tag):
+    """Add a new column to the conversation_tags table for a new tag."""
+    conn = get_connection()
+    c = conn.cursor()
+
+    # Add the new tag column with default value 0
+    c.execute(f"ALTER TABLE conversation_tags ADD COLUMN {tag} INTEGER DEFAULT 0")
+
+    conn.commit()
+    conn.close()
+
+def get_predefined_tags_from_db():
+    """
+    Extract predefined tags by fetching all column names from the `conversation_tags` table
+    except `session_id`.
+    """
+    # Connect to the database
+    conn = get_connection()
+    c = conn.cursor()
+
+    # Query to get all column names from the conversation_tags table
+    query = "PRAGMA table_info(conversation_tags);"
+    c.execute(query)
+
+    # Fetch all columns from the result of the query
+    columns_info = c.fetchall()
+
+    # Close the database connection
+    conn.close()
+
+    # Extract column names excluding 'session_id'
+    predefined_tags = [
+        column[1] for column in columns_info if column[1] != "session_id"
+    ]
+
+    return predefined_tags

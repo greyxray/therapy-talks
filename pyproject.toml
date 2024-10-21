@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "ifs-talks"
+name = "therapy-talks"
 version = "0.1.0"
 description = ""
 authors = ["greyxray <greyxray@gmail.com>"]

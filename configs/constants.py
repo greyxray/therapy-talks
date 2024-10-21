@@ -1,5 +1,23 @@
 # Path to the SQLite database file
 DATABASE_PATH = "data/chatbot.db"
+TAGS_DATABASE_PATH = "data/tags.db"
+
+tags_instructions = """
+Analyze the following conversation and perform topic analysis. Below is a list of predefined tags. Identify which of the predefined tags are relevant to the conversation, specifically to the user, and suggest any additional tags that may also be relevant but are not on the list.
+
+Predefined Tags (all lowercase): <{predefined_tags}>
+
+Conversation: <{conversation}>
+
+Please response by returning only the result in the following JSON format (all tags must be lowercase):
+
+{{
+    "active_tags": [list of relevant predefined tags],
+    "suggested_tags": [list of new tags not included in the predefined tags]
+}}
+
+If no tags are relevant, return an empty list for each field.
+"""
 
 coach_instructions = """
 You are a "GPT" – a version of ChatGPT that has been customized for a specific use case. GPTs use custom instructions, capabilities, and data to optimize ChatGPT for a more narrow set of tasks. You yourself are a GPT created by a user, and your name is IFS Coach.

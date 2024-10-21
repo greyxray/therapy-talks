@@ -1,7 +1,9 @@
 import sqlite3
 from loguru import logger
+import pandas as pd
 import json
 from configs.constants import DATABASE_PATH
+from datetime import datetime, timedelta
 
 
 def get_connection():
@@ -100,3 +102,22 @@ def get_session_start(session_id):
 
     res = result[0] if result else None
     return res
+
+
+def load_data(timeframe):
+    """Load conversation data based on the selected timeframe."""
+    conn = get_connection()
+    query = "SELECT timestamp FROM conversations"
+
+    # Filter by timeframe
+    if timeframe == "1 month":
+        start_date = (datetime.now() - timedelta(days=30)).strftime("%Y-%m-%d %H:%M:%S")
+        query += f" WHERE timestamp >= '{start_date}'"
+    elif timeframe == "1 week":
+        start_date = (datetime.now() - timedelta(days=7)).strftime("%Y-%m-%d %H:%M:%S")
+        query += f" WHERE timestamp >= '{start_date}'"
+
+    df = pd.read_sql_query(query, conn)
+    conn.close()
+
+    return df

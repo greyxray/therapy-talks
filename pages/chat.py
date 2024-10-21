@@ -27,7 +27,7 @@ def get_response(messages):
 
 
 def main():
-    st.title("Coach support Chatbot")
+    st.title("Listener is here")
 
     # Check if there's already a session ID, if not create one
     if "session_id" not in st.session_state:

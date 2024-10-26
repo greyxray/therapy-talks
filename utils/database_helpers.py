@@ -1,12 +1,18 @@
-import sqlite3
-from loguru import logger
-import pandas as pd
+"""
+Helper functions to interact with the SQLite database for storing conversation data.
+"""
+
 import json
-from configs.constants import DATABASE_PATH
+import sqlite3
 from datetime import datetime, timedelta
-from utils.openai_helpers import (
+
+import pandas as pd
+from loguru import logger
+
+from configs.constants import DATABASE_PATH
+from utils.openai_helpers import (  # Assuming this is the assign_tags function we defined earlier
     assign_tags,
-)  # Assuming this is the assign_tags function we defined earlier
+)
 
 
 def get_connection():
@@ -114,10 +120,12 @@ def load_data(timeframe):
 
     # Filter by timeframe
     if timeframe == "1 month":
-        start_date = (datetime.now() - timedelta(days=30)).strftime("%Y-%m-%d %H:%M:%S")
+        start_date = (datetime.now() - timedelta(days=30)
+                      ).strftime("%Y-%m-%d %H:%M:%S")
         query += f" WHERE timestamp >= '{start_date}'"
     elif timeframe == "1 week":
-        start_date = (datetime.now() - timedelta(days=7)).strftime("%Y-%m-%d %H:%M:%S")
+        start_date = (datetime.now() - timedelta(days=7)
+                      ).strftime("%Y-%m-%d %H:%M:%S")
         query += f" WHERE timestamp >= '{start_date}'"
 
     df = pd.read_sql_query(query, conn)
@@ -198,7 +206,8 @@ def update_conversation_tags(session_id, active_tags, predefined_tags):
     c = conn.cursor()
 
     # Set values for each tag (1 if present in tags, otherwise 0)
-    tag_values = {tag: 1 if tag in active_tags else 0 for tag in predefined_tags}
+    tag_values = {
+        tag: 1 if tag in active_tags else 0 for tag in predefined_tags}
 
     # Create a dynamic SQL query for inserting or replacing the tag values
     columns = ", ".join(predefined_tags)
@@ -208,7 +217,8 @@ def update_conversation_tags(session_id, active_tags, predefined_tags):
     VALUES (?, {placeholders})
     """
 
-    # Define the values to be inserted into the query, corresponding to each tag column
+    # Define the values to be inserted into the query, corresponding to each
+    # tag column
     values = (session_id, *tag_values.values())
 
     # Execute the query to update the conversation_tags table
@@ -225,10 +235,12 @@ def add_new_tag_column(tag):
     c = conn.cursor()
 
     # Add the new tag column with default value 0
-    c.execute(f"ALTER TABLE conversation_tags ADD COLUMN {tag} INTEGER DEFAULT 0")
+    c.execute(
+        f"ALTER TABLE conversation_tags ADD COLUMN {tag} INTEGER DEFAULT 0")
 
     conn.commit()
     conn.close()
+
 
 def get_predefined_tags_from_db():
     """

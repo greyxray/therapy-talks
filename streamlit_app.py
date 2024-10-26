@@ -1,9 +1,14 @@
-
+"""
+Main file for the Listener App.
+"""
 
 import streamlit as st
 
 
 def main():
+    """
+    Main function for the Listener App.
+    """
     st.title("Welcome to the Listener App!")
     st.write(
         """

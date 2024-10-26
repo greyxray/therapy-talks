@@ -1,20 +1,24 @@
-import streamlit as st
-import openai
-from dotenv import load_dotenv
-from loguru import logger
-import os
-from utils.database_helpers import save_conversation, get_conversation
-from configs.constants import coach_instructions  # Importing the preset instruction
 import uuid  # For generating session IDs
 from datetime import datetime
-
 from pprint import pformat
 
+import openai
+import streamlit as st
+
+# from dotenv import load_dotenv
+from loguru import logger
+
+# Importing the preset instruction
+from configs.constants import coach_instructions
+
+# import os
+from utils.database_helpers import get_conversation, save_conversation
+
 # Load environment variables
-load_dotenv()
+# load_dotenv()
 
 # Set up GPT-4.0 Turbo Mini API
-openai.api_key = os.getenv("OPENAI_API_KEY")
+openai.api_key = st.secrets["OPENAI_API_KEY"]
 
 
 def get_response(messages):
@@ -45,7 +49,8 @@ def main():
 
     # Initialize session state for conversation history
     if "messages" not in st.session_state:
-        # Retrieve previous conversations from the database (conversation and session_start)
+        # Retrieve previous conversations from the database (conversation and
+        # session_start)
         previous_data = get_conversation(session_id)
 
         if previous_data:
@@ -84,12 +89,14 @@ def main():
         with st.chat_message("assistant"):
             st.markdown(response)
         # Add assistant response to chat history
-        st.session_state.messages.append({"role": "assistant", "content": response})
+        st.session_state.messages.append(
+            {"role": "assistant", "content": response})
 
         # Save the entire conversation (as JSON) in the database
         save_conversation(
-            session_id, st.session_state.messages, st.session_state.session_start
-        )
+            session_id,
+            st.session_state.messages,
+            st.session_state.session_start)
 
 
 if __name__ == "__main__":

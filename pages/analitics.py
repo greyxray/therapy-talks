@@ -1,13 +1,15 @@
-import streamlit as st
 import sqlite3
+
 import pandas as pd
 import plotly.express as px
+import streamlit as st
 from loguru import logger
+
 from utils.database_helpers import (
-    get_connection,
     count_rows,
-    load_data,
+    get_connection,
     get_predefined_tags_from_db,
+    load_data,
     load_tagged_data,
     process_all_unprocessed_conversations,
     update_conversation_tags,
@@ -23,9 +25,11 @@ def plot_conversation_histogram(df, binning):
     if binning == "Day":
         df["date"] = df["timestamp"].dt.date
     elif binning == "Week":
-        df["date"] = df["timestamp"].dt.to_period("W").apply(lambda r: r.start_time)
+        df["date"] = df["timestamp"].dt.to_period(
+            "W").apply(lambda r: r.start_time)
     elif binning == "Month":
-        df["date"] = df["timestamp"].dt.to_period("M").apply(lambda r: r.start_time)
+        df["date"] = df["timestamp"].dt.to_period(
+            "M").apply(lambda r: r.start_time)
 
     df_grouped = df["date"].value_counts().sort_index().reset_index()
     df_grouped.columns = ["date", "count"]
@@ -36,7 +40,9 @@ def plot_conversation_histogram(df, binning):
         x="date",
         y="count",
         title=f"Conversations Binned by {binning}",
-        labels={"date": f"Binned by {binning}", "count": "Number of Conversations"},
+        labels={
+            "date": f"Binned by {binning}",
+            "count": "Number of Conversations"},
     )
 
     fig.update_layout(
@@ -81,7 +87,6 @@ def plot_tag_histogram(df, predefined_tags):
     st.plotly_chart(fig)
 
 
-
 def main():
     st.title("Chatbot Analytics with Tagging")
 
@@ -102,7 +107,9 @@ def main():
     )
 
     # Binning option dropdown for conversation histogram
-    binning = st.selectbox("Bin conversations by", ["Day", "Week", "Month"], index=0)
+    binning = st.selectbox(
+        "Bin conversations by", [
+            "Day", "Week", "Month"], index=0)
 
     # Load conversation data with tags based on timeframe
     df = load_tagged_data(timeframe, predefined_tags)

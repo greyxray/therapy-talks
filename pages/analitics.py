@@ -5,16 +5,13 @@ import plotly.express as px
 import streamlit as st
 from loguru import logger
 
-from utils.database_helpers import (
+from utils.openai_helpers import assign_tags  # Assuming this exists
+from utils.pg_database_helpers import (
     count_rows,
-    get_connection,
     get_predefined_tags_from_db,
-    load_data,
     load_tagged_data,
     process_all_unprocessed_conversations,
-    update_conversation_tags,
 )
-from utils.openai_helpers import assign_tags  # Assuming this exists
 
 
 def plot_conversation_histogram(df, binning):

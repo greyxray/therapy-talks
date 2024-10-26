@@ -12,7 +12,7 @@ from loguru import logger
 from configs.constants import coach_instructions
 
 # import os
-from utils.database_helpers import get_conversation, save_conversation
+from utils.pg_database_helpers import get_conversation, save_conversation
 
 # Load environment variables
 # load_dotenv()

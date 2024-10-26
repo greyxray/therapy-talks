@@ -1,0 +1,26 @@
+version: '3'
+
+tasks:
+
+  lint-streamlit-check:
+    desc: "Run lint checks (isort, black, pylint, mypy) on ."
+    cmds:
+      - poetry run isort . --check-only --settings-path .isort.cfg --skip .venv --skip debug.py || true
+      - poetry run black . --check --exclude .venv || true
+      - poetry run pylint . --rcfile=.pylintrc --ignore .venv --ignore debug.py || true
+      - poetry run mypy --explicit-package-bases --config-file mypy.ini . --exclude '\.venv'
+
+  lint-streamlit:
+    desc: "Run linting with auto-fixes on ."
+    cmds:
+      - poetry run isort . --settings-path .isort.cfg --skip .venv
+      - poetry run black . --exclude .venv
+      - poetry run pylint . --rcfile=.pylintrc --ignore .venv --ignore debug.py
+      - poetry run mypy --explicit-package-bases --config-file mypy.ini . --exclude '\.venv'
+      - poetry run autopep8 --in-place --aggressive --exclude .venv --aggressive ./**/*.py
+      - echo "Success -> . is linted"
+
+  fix-streamlit:
+    desc: "Auto-fix code style issues on . using autopep8"
+    cmds:
+      - poetry run autopep8 --in-place --aggressive --exclude .venv --aggressive ./**/*.py
